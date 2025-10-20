@@ -22,3 +22,4 @@ gas-report
 artifacts-pvm
 cache-pvm
 .env
+deployment/
