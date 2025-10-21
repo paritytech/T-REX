@@ -1,10 +1,11 @@
-name: Deploy Contracts and Verify artifacts  
+name: Deploy Contracts and Verify artifacts
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
-      - master
-  workflow_dispatch:
 
 jobs:
   deploy:
@@ -16,9 +17,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: 'npm'
-          cache-dependency-path: './package-lock.json'
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: "./package-lock.json"
 
       - name: Install dependencies
         run: npm ci
@@ -26,18 +27,14 @@ jobs:
       - name: Start local node
         run: |
           npm run node &
-          NODE_PID=$!
-          echo "Node PID: $NODE_PID"
+          echo $! > node.pid
 
       - name: Wait for node to be ready
         run: |
-          # Example: poll until HTTP port or log indicates ready
           for i in {1..30}; do
             if curl --silent localhost:9933/health; then
-              echo "Node ready"
               break
             fi
-            echo "Waiting for node..."
             sleep 2
           done
 
@@ -46,16 +43,9 @@ jobs:
 
       - name: Verify deployment artifact exists
         run: |
-          if [ ! -f deployment/420420420.json ]; then
-            echo "ERROR: deployment/420420420.json not found"
-            exit 1
-          fi
+          [ -f deployment/420420420.json ] || exit 1
 
       - name: Stop local node
         run: |
-          echo "Stopping node PID $NODE_PID"
-          kill $NODE_PID || true
-
-      - name: Clean-up
-        run: |
-          wait $NODE_PID || true
+          kill $(cat node.pid) || true
+          wait $(cat node.pid) || true
