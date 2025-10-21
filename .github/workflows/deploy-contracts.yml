@@ -39,7 +39,7 @@ jobs:
           done
 
       - name: Deploy contracts
-        run: npm run deploy:polkadot
+        run: npm run deploy:polkadot:compile
 
       - name: Verify deployment artifact exists
         run: |
