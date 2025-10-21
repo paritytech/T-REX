@@ -6,8 +6,6 @@ import 'solidity-coverage';
 import '@nomiclabs/hardhat-solhint';
 import '@primitivefi/hardhat-dodoc';
 import "@parity/hardhat-polkadot";
-import "@nomicfoundation/hardhat-viem";
-
 require('dotenv').config()
 const config: HardhatUserConfig = {
   solidity: {
@@ -54,12 +52,12 @@ const config: HardhatUserConfig = {
     hardhat: {
       polkavm: true,
       nodeConfig: {
-        nodeBinaryPath: "./polkadot-sdk/target/release/substrate-node",
+        nodeBinaryPath: './bin/revive-dev-node',
         rpcPort: 9944,
         dev: true,
       },
       adapterConfig: {
-        adapterBinaryPath: './polkadot-sdk/target/release/eth-rpc',
+        adapterBinaryPath: './bin/eth-rpc',
         dev: true,
         adapterPort: 8545
       },

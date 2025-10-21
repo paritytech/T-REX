@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+
 import { getAsset } from '../db/store.ts';
-import { mint, preflightTransfer, transfer } from '../services/token.ts';
 import { registerIdentity } from '../services/identity.ts';
-import { PreflightParams, Asset } from '../utils/types.ts';
+import { mint, preflightTransfer, transfer } from '../services/token.ts';
+import { Asset, PreflightParams } from '../utils/types.ts';
 
 export default async function transactionRoutes(fastifyApp: FastifyInstance) {
   fastifyApp.post('/v1/assets/transfer', async (request, reply) => {

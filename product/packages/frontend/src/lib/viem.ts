@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, custom, http, getAddress } from 'viem';
+import { createPublicClient, createWalletClient, custom, getAddress, http } from 'viem';
 
 const RPC = import.meta.env.VITE_RPC_HTTP as string;
 const CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID);

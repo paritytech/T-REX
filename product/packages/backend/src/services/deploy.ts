@@ -1,14 +1,15 @@
-import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
-import { loadArtifact } from '../chain/artifacts.ts';
-import { Address, Hex, createWalletClient, http, checksumAddress, isAddressEqual } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
-import * as fs from 'fs/promises';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
-import { getCfg, putAsset, getUser, putUser } from '../db/store.ts';
 import { BigNumber } from 'bignumber.js';
-import { registerIdentity } from './identity.ts';
+import * as fs from 'fs/promises';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { Address, checksumAddress, createWalletClient, http, isAddressEqual } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+import { loadArtifact } from '../chain/artifacts.ts';
+import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
+import { getCfg, getUser, putAsset, putUser } from '../db/store.ts';
 import { CustodyKey, DeployInput, DeployResponse } from '../utils/types.ts';
+import { registerIdentity } from './identity.ts';
 
 const filename = fileURLToPath(import.meta.url);
 const directory = dirname(filename);
@@ -323,7 +324,7 @@ export async function deployAssetSuite(input: DeployInput): Promise<DeployRespon
     } else {
       const identityRegistrationResult = await registerIdentity({
         owner: toChecksum(input.owner),
-        country: input.country,
+        country: input.country.toString(),
       });
 
       if (!identityRegistrationResult.status || !identityRegistrationResult.isVerified) {

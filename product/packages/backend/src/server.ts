@@ -1,13 +1,15 @@
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
 import 'dotenv/config';
+
+import cors from '@fastify/cors';
+import dotenv from 'dotenv';
+import Fastify from 'fastify';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
 import admin from './routes/admin.ts';
 import assets from './routes/assets.ts';
 import txRoutes from './routes/tx.ts';
 import users from './routes/users.ts';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
-import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

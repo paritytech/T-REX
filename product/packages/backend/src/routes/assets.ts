@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { deployAssetSuite } from '../services/deploy.ts';
-import { getAsset } from '../db/store.ts';
-import { publicClient } from '../chain/client.ts';
+
 import { loadArtifact } from '../chain/artifacts.ts';
+import { publicClient } from '../chain/client.ts';
+import { getAsset } from '../db/store.ts';
+import { deployAssetSuite } from '../services/deploy.ts';
 
 export default async function assets(fastifyApp: FastifyInstance) {
   fastifyApp.post('/v1/assets/tokenise', async (request, reply) => {
@@ -29,6 +30,7 @@ export default async function assets(fastifyApp: FastifyInstance) {
       symbol: tokenSymbol,
       supply: BigInt(tokenSupply),
       description: tokenDescription,
+      country: 0,
     });
 
     return reply.send({ asset: deploymentResult });

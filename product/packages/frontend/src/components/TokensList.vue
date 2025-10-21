@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm md:p-6">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -119,4 +118,3 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', onVisible);
 });
 </script>
-```

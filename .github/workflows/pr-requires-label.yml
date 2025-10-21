@@ -1,0 +1,28 @@
+name: pr-requires-label
+on:
+  pull_request:
+    types: [opened, edited, labeled, unlabeled, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate labels
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          needles='["frontend","backend","smartcontracts"]'
+          has=0
+          for l in $(echo "$LABELS_JSON" | jq -r '.[].name'); do
+            if echo "$needles" | jq -e --arg l "$l" 'index($l) != null' >/dev/null; then
+              has=1
+              break
+            fi
+          done
+          if [ "$has" -eq 0 ]; then
+            echo "::error::PR must have at least one label: frontend | backend | smartcontracts"
+            exit 1
+          fi

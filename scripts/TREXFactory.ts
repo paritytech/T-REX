@@ -68,7 +68,8 @@ async function main() {
   const keyring = new Keyring({ type: "sr25519" });
   const signer = keyring.addFromUri("//Alice");
   console.log("Substrate signer:", signer.address);
-
+  const balance = await api.query.system.account(signer.address);
+  console.log(`Substrate signer balance: ${balance.data.free.toString()}`);
   try {
     const contractsToUpload = [
       "ClaimTopicsRegistry",
@@ -466,7 +467,8 @@ async function main() {
         symbol: tokenSymbol,
         decimals: 18
       },
-      wallets
+      wallets,
+      claimTopics
     };
 
     const deploymentFile = path.join(deploymentDir, `${chainId}.json`);

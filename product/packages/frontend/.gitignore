@@ -1,0 +1,7 @@
+.env
+build/
+bin/
+coverage/
+coverage.json
+typechain-types/
+artifacts/
