@@ -17,7 +17,7 @@
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^4.5.0",
     "viem": "^2.16.5",
-    "vite": "^7.1.5",
+    "vite": "^5.4.21",
     "vue": "^3.4.29"
   },
   "devDependencies": {
@@ -36,7 +36,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2",
+    "vite": "^5.4.21",
     "vue-tsc": "^2.0.29"
   }
 }
