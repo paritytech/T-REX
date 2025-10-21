@@ -23,7 +23,6 @@
     "postinstall": "bash setup.sh",
     "compile": "hardhat compile",
     "node": "hardhat node",
-    "setup:node": "npm run init:submodule && cd polkadot-sdk && cargo build -p pallet-revive-eth-rpc --bin eth-rpc --release && cargo build --bin substrate-node --release && cd .. && npm run compile && npm run node",
     "init:submodule": "git submodule update --init --recursive --remote",
     "build": "hardhat compile",
     "flatten": "node scripts/flatten.js",
@@ -35,7 +34,8 @@
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "docs": "hardhat dodoc",
     "prepare": "husky install",
-    "deploy:polkadot": "npx hardhat run scripts/TREXFactory.ts --network assetHub --no-compile"
+    "deploy:polkadot": "npx hardhat run scripts/TREXFactory.ts --network assetHub --no-compile",
+    "deploy:polkadot:compile": "npx hardhat run scripts/TREXFactory.ts --network assetHub"
   },
   "repository": {
     "type": "git",

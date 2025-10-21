@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { setCfg, getCfg } from '../db/store.ts';
+
+import { getCfg, setCfg } from '../db/store.ts';
 
 export default async function admin(fastifyApp: FastifyInstance) {
   fastifyApp.post('/v1/admin/config', async (request, reply) => {
@@ -50,7 +51,7 @@ export default async function admin(fastifyApp: FastifyInstance) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({
           error: 'Validation error',
-          details: error.errors,
+          details: error.toString(),
         });
       }
 

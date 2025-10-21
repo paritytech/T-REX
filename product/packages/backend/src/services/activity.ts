@@ -1,5 +1,6 @@
-import { publicClient } from '../chain/client.ts';
 import { Address } from 'viem';
+
+import { publicClient } from '../chain/client.ts';
 import { putEvent } from '../db/store.ts';
 
 export async function backfillTransfers(assetIdentifier: string, tokenAddress: Address, fromBlockNumber?: bigint) {

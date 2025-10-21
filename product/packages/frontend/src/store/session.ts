@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import { connectWallet, makeClients } from '../lib/viem';
-import { api, type Address, type GetUserResponse } from '../lib/api';
 import { checksumAddress, formatEther } from 'viem';
+
+import { type Address, api, type GetUserResponse } from '../lib/api';
+import { connectWallet, makeClients } from '../lib/viem';
 
 type Eth = {
   request: (args: { method: string; params?: unknown[] | object }) => Promise<unknown>;
@@ -40,7 +41,7 @@ export const useSession = defineStore('session', {
         if (checksumAddress(next) !== checksumAddress(this.address)) this.disconnect();
       };
 
-      const onChainChanged = (_hexId: string) => {
+      const onChainChanged = () => {
         this.disconnect();
       };
 

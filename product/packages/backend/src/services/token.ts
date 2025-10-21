@@ -1,12 +1,13 @@
-import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
-import { Address, Hex, checksumAddress, createWalletClient, http, isAddressEqual, WaitForTransactionReceiptReturnType } from 'viem';
-import { loadArtifact } from '../chain/artifacts.ts';
 import BigNumber from 'bignumber.js';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
 import * as fs from 'fs/promises';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { Address, checksumAddress, createWalletClient, Hex, http, isAddressEqual, WaitForTransactionReceiptReturnType } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { CustodyKey, PreflightParams, PreflightResult, ValidationCheck, ComplianceCheckResults } from '../utils/types.ts';
+
+import { loadArtifact } from '../chain/artifacts.ts';
+import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
+import { ComplianceCheckResults, CustodyKey, PreflightParams, PreflightResult, ValidationCheck } from '../utils/types.ts';
 
 const filename = fileURLToPath(import.meta.url);
 const directory = dirname(filename);

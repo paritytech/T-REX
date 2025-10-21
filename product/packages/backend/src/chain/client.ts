@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, defineChain, getAddress } from 'viem';
+import { createPublicClient, createWalletClient, defineChain, getAddress, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const CHAIN_ID = Number(process.env.CHAIN_ID);

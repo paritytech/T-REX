@@ -7,8 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:fix": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:check": "eslint . --ext .ts,.vue --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts,.vue --fix"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
@@ -20,12 +22,21 @@
   },
   "devDependencies": {
     "@types/node": "^22.5.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vue/eslint-config-typescript": "^14.6.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unused-imports": "^4.3.0",
+    "eslint-plugin-vue": "^10.5.1",
     "postcss": "^8.4.47",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",
-    "vue-tsc": "^2.0.29",
-    "prettier": "^3.3.3"
+    "vue-tsc": "^2.0.29"
   }
 }

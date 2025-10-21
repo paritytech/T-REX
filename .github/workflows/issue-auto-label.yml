@@ -1,0 +1,44 @@
+name: issue-auto-label
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract component from form body
+        id: extract
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          comp="$(printf '%s\n' "$BODY" | awk '/^### Component/{getline; print}' | tr -d '\r')"
+          case "$comp" in
+            "Frontend") label="frontend" ;;
+            "Backend") label="backend" ;;
+            "Smart contracts"|"Smart Contracts") label="smartcontracts" ;;
+            *) label="" ;;
+          esac
+          echo "component=$comp" >> $GITHUB_OUTPUT
+          echo "label=$label" >> $GITHUB_OUTPUT
+
+      - name: Apply label
+        if: steps.extract.outputs.label != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api \
+            repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels \
+            -f labels='["'${{ steps.extract.outputs.label }}'"]'
+
+      - name: Comment when missing
+        if: steps.extract.outputs.label == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -f body='Please choose a Component in the issue form (Frontend, Backend, or Smart contracts) so labels can be applied.'

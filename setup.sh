@@ -1,207 +1,275 @@
 #!/bin/bash
+set -euo pipefail
 
-ROOT_DIR=$(pwd)
+ROOT_DIR="$(pwd)"
+BIN_DIR="$ROOT_DIR/bin"
+RELEASE_REPO="paritytech/hardhat-polkadot"
 
-check_tools() {
-    command -v git >/dev/null || { echo "ERROR: git is required but not found"; exit 1; }
-    command -v npm >/dev/null || { echo "ERROR: npm is required but not found"; exit 1; }
+msg(){ printf "%s\n" "$*"; }
+have(){ command -v "$1" >/dev/null 2>&1; }
+
+check_tools(){
+  have git || { echo "ERROR: git is required but not found"; exit 1; }
+  have npm || { echo "ERROR: npm is required but not found"; exit 1; }
+  have curl || { echo "ERROR: curl is required but not found"; exit 1; }
+  have node || { echo "ERROR: node is required but not found"; exit 1; }
+  command -v corepack >/dev/null 2>&1 || true
 }
 
-clone_or_update() {
-    local repo_url=$1
-    local dir_name=$2
-    local branch=$3
-    
-    echo "Setting up $dir_name..."
-    
-    if [ -d "$dir_name/.git" ]; then
-        echo "  - Directory exists, updating..."
-        cd "$ROOT_DIR/$dir_name"
-        if ! git fetch origin; then
-            echo "  - Fetch failed, re-cloning..."
-            cd "$ROOT_DIR"
-            rm -rf "$dir_name"
-            if ! git clone -b "$branch" "$repo_url" "$dir_name"; then
-                echo "  - ERROR: Failed to clone $dir_name"
-                return 1
-            fi
-        else
-            git checkout "$branch" || true
-            git pull origin "$branch" || true
-        fi
-    else
-        echo "  - Cloning fresh copy..."
-        rm -rf "$dir_name"
-        if ! git clone -b "$branch" "$repo_url" "$dir_name"; then
-            echo "  - ERROR: Failed to clone $dir_name"
-            return 1
-        fi
-    fi
-    cd "$ROOT_DIR"
-    
-    if [ ! -d "$dir_name" ]; then
-        echo "  - ERROR: Failed to clone $dir_name"
-        return 1
-    else
-        echo "  - SUCCESS: $dir_name ready"
-        return 0
-    fi
+clone_or_update(){
+  local repo_url=$1 dir_name=$2 branch=$3
+  echo "Setting up $dir_name..."
+  rm -rf "$dir_name"
+  if git clone -b "$branch" "$repo_url" "$dir_name"; then
+    echo "  - SUCCESS: $dir_name ready"
+  else
+    echo "  - ERROR: Failed to clone $dir_name"
+    return 1
+  fi
 }
 
-verify_and_clone_if_missing() {
-    local repo_url=$1
-    local dir_name=$2
-    local branch=$3
-    
-    if [ ! -d "$dir_name" ]; then
-        echo "Directory $dir_name missing, cloning manually..."
-        clone_or_update "$repo_url" "$dir_name" "$branch"
-    else
-        echo "Directory $dir_name exists"
-    fi
+pm_from_pkgjson(){
+  local file="$1" val pm="npm"
+  if [ -f "$file" ]; then
+    val="$(node -e "try{const p=require('$file');console.log(p.packageManager||'')}catch(e){console.log('')}")"
+    case "$val" in
+      yarn*|*yarn*) pm="yarn";;
+      pnpm*|*pnpm*) pm="pnpm";;
+      npm*|*npm*)   pm="npm";;
+    esac
+  fi
+  echo "$pm"
 }
 
-if [ "$npm_lifecycle_event" == "preinstall" ]; then
-    echo "Setting up dependencies..."
-    
-    check_tools
-    
-    if git submodule status >/dev/null 2>&1; then
-        echo "Attempting git submodule update..."
-        if ! git submodule update --init --recursive; then
-            echo "Submodule update failed, will clone manually..."
-        fi
-    else
-        echo "Not a git repo or submodules not configured, will clone directly..."
-    fi
-    
-    verify_and_clone_if_missing "https://github.com/Brianspha/micro-eth-signer.git" "micro-eth-signer" "main"
-    verify_and_clone_if_missing "https://github.com/Brianspha/solidity.git" "solidity" "main"
-    verify_and_clone_if_missing "https://github.com/paritytech/polkadot-sdk.git" "polkadot-sdk" "master"
-    verify_and_clone_if_missing "https://github.com/Brianspha/hardhat-polkadot-trex.git" "hardhat-polkadot" "main"
+pm_version_from_pkgjson(){
+  local file="$1"
+  node -e "try{const p=require('$file');const s=String(p.packageManager||'');console.log(s.split('@')[1]||'')}catch(e){console.log('')}"
+}
 
-    if [ -d "micro-eth-signer" ]; then
-        echo "Building micro-eth-signer..."
-        cd "$ROOT_DIR/micro-eth-signer"
-        if npm install --silent --no-save --no-audit --no-fund; then
-            npm run build || echo "micro-eth-signer build failed"
-        else
-            echo "micro-eth-signer install failed"
-        fi
-        cd "$ROOT_DIR"
-    else
-        echo "WARNING: micro-eth-signer directory not found"
-    fi
+ensure_pm(){
+  local pm="$1" ver="$2"
+  case "$pm" in
+    pnpm)
+      if ! have pnpm; then
+        corepack enable >/dev/null 2>&1 || true
+        [ -n "$ver" ] && corepack prepare "pnpm@${ver}" --activate >/dev/null 2>&1 || true
+      fi
+      ;;
+    yarn)
+      if ! have yarn; then
+        corepack enable >/dev/null 2>&1 || true
+        [ -n "$ver" ] && corepack prepare "yarn@${ver}" --activate >/dev/null 2>&1 || true
+      fi
+      ;;
+  esac
+}
 
-    if [ -d "hardhat-polkadot" ]; then
-        echo "Building hardhat-polkadot..."
-        cd "$ROOT_DIR/hardhat-polkadot"
-        if command -v pnpm >/dev/null; then
-            if pnpm i; then
-                pnpm build || echo "hardhat-polkadot build failed"
-            else
-                echo "hardhat-polkadot install failed"
-            fi
-        else
-            echo "pnpm not found, skipping hardhat-polkadot build"
-        fi
-        cd "$ROOT_DIR"
-    else
-        echo "WARNING: hardhat-polkadot directory not found"
-    fi
+detect_platform(){
+  local os arch
+  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
+  case "$os" in
+    darwin)
+      case "$arch" in
+        arm64|aarch64) echo "darwin-arm64";;
+        x86_64|amd64)  echo "darwin-x64";;
+        *) echo "unknown";;
+      esac;;
+    linux)
+      case "$arch" in
+        x86_64|amd64)  echo "linux-x64";;
+        aarch64|arm64) echo "linux-arm64";;
+        *) echo "unknown";;
+      esac;;
+    *) echo "unknown";;
+  esac
+}
 
-    if [ -d "solidity" ]; then
-        echo "Building solidity..."
-        cd "$ROOT_DIR/solidity"
-        if npm install --silent --no-save --no-audit --no-fund; then
-            npm run build || echo "solidity build failed"
-        else
-            echo "solidity install failed"
-        fi
-        cd "$ROOT_DIR"
-    else
-        echo "WARNING: solidity directory not found"
-    fi
+ts_loosen(){
+  local dir="$1"
+  if [ -f "$dir/tsconfig.json" ]; then
+    node -e "const fs=require('fs');const p='$dir/tsconfig.json';let j=JSON.parse(fs.readFileSync(p));j.compilerOptions=j.compilerOptions||{};j.compilerOptions.skipLibCheck=true;j.compilerOptions.skipDefaultLibCheck=true;j.compilerOptions.noEmitOnError=false;fs.writeFileSync(p,JSON.stringify(j,null,2));"
+  fi
+}
+
+install_deps(){
+  local dir="$1" pm="$2"
+  case "$pm" in
+    yarn) (cd "$dir" && yarn install --silent ) || true ;;
+    pnpm) (cd "$dir" && pnpm i --silent ) || true ;;
+    npm)  (cd "$dir" && npm install --silent --no-audit --no-fund) || true ;;
+  esac
+}
+
+rebuild_native(){
+  local dir="$1" pm="$2"
+  case "$pm" in
+    yarn) (cd "$dir" && yarn run -s rebuild) || (cd "$dir" && pnpm rebuild >/dev/null 2>&1) || (cd "$dir" && npm rebuild) || true ;;
+    pnpm) (cd "$dir" && pnpm rebuild) || true ;;
+    npm)  (cd "$dir" && npm rebuild) || true ;;
+  esac
+}
+
+build_pkg(){
+  local dir="$1" pm="$2"
+  ts_loosen "$dir"
+  case "$pm" in
+    yarn) (cd "$dir" && TS_NODE_TRANSPILE_ONLY=1 yarn build) || true ;;
+    pnpm) (cd "$dir" && TS_NODE_TRANSPILE_ONLY=1 pnpm build) || true ;;
+    npm)  (cd "$dir" && TS_NODE_TRANSPILE_ONLY=1 npm run build) || true ;;
+  esac
+}
+
+link_parity_packages(){
+  mkdir -p node_modules/@parity
+  for pkg_dir in hardhat-polkadot/packages/*/; do
+    [ -f "$pkg_dir/package.json" ] || continue
+    local name
+    name="$(grep -oE '"name"[[:space:]]*:[[:space:]]*"@parity/[^"]+' "$pkg_dir/package.json" | sed 's/.*"@parity\///')"
+    [ -n "$name" ] || continue
+    rm -rf "node_modules/@parity/$name"
+    ln -sfn "$ROOT_DIR/$pkg_dir" "node_modules/@parity/$name"
+    echo "@parity/$name symlink created"
+  done
+}
+
+ensure_fs_xattr_stub(){
+  local target_dir="$1"
+  mkdir -p "$target_dir/node_modules/fs-xattr"
+  cat > "$target_dir/node_modules/fs-xattr/package.json" <<'PKG'
+{
+  "name": "fs-xattr",
+  "version": "0.0.0-stub",
+  "main": "index.js"
+}
+PKG
+  cat > "$target_dir/node_modules/fs-xattr/index.js" <<'JS'
+module.exports = {
+  get: async () => Buffer.alloc(0),
+  set: async () => {},
+  remove: async () => {},
+  list: async () => []
+}
+JS
+}
+
+resolve_asset_url(){
+  local want="$1"
+  curl -fsSL "https://api.github.com/repos/${RELEASE_REPO}/releases?per_page=30" \
+  | node -e '
+    const fs=require("fs");
+    const rels=JSON.parse(fs.readFileSync(0,"utf8"));
+    const want=process.argv[1];
+    for(const r of rels){
+      const tag=(r.tag_name||"").toLowerCase();
+      const name=(r.name||"").toLowerCase();
+      if(tag.startsWith("nodes-")||name.includes("nodes build")){
+        for(const a of r.assets||[]){
+          if(a.name===want){ console.log(a.browser_download_url); process.exit(0); }
+        }
+      }
+    }
+    process.exit(1);
+  ' "$want"
+}
+
+download_bin(){
+  local asset="$1" link_name="$2"
+  local url out
+  if ! url="$(resolve_asset_url "$asset")"; then
+    msg "$asset not found in latest nodes-* releases"
+    return 1
+  fi
+  out="$BIN_DIR/$asset"
+  curl -fsSL --retry 3 --retry-delay 1 -o "$out" "$url"
+  chmod +x "$out"
+  ln -sfn "$out" "$BIN_DIR/$link_name"
+  msg "$link_name installed from $(basename "$url")"
+}
+
+install_nodes_binaries(){
+  echo "Fetching latest node binaries..."
+  mkdir -p "$BIN_DIR"
+  local platform
+  platform="$(detect_platform)"
+  case "$platform" in
+    darwin-arm64)
+      download_bin "revive-dev-node-darwin-arm64" "revive-dev-node" || true
+      download_bin "eth-rpc-darwin-arm64" "eth-rpc" || true
+      ;;
+    darwin-x64)
+      download_bin "revive-dev-node-darwin-x64" "revive-dev-node" || true
+      download_bin "eth-rpc-darwin-x64" "eth-rpc" || true
+      ;;
+    linux-x64)
+      download_bin "revive-dev-node-linux-x64" "revive-dev-node" || true
+      download_bin "eth-rpc-linux-x64" "eth-rpc" || true
+      ;;
+    linux-arm64)
+      download_bin "revive-dev-node-linux-arm64" "revive-dev-node" || true
+      download_bin "eth-rpc-linux-arm64" "eth-rpc" || true
+      ;;
+    *)
+      echo "Unsupported platform: $platform"
+      ;;
+  esac
+}
+
+if [ "${npm_lifecycle_event:-}" = "preinstall" ]; then
+  echo "Setting up dependencies..."
+  check_tools
+  if git submodule status >/dev/null 2>&1; then
+    echo "Attempting git submodule update..."
+    git submodule update --init --recursive || echo "Submodule update failed, continuing..."
+  fi
+  clone_or_update "https://github.com/Brianspha/micro-eth-signer.git" "micro-eth-signer" "main"
+  clone_or_update "https://github.com/Brianspha/solidity.git" "solidity" "main"
+  clone_or_update "https://github.com/Brianspha/hardhat-polkadot-trex.git" "hardhat-polkadot" "main"
+
+  MES_PM="$(pm_from_pkgjson "$ROOT_DIR/micro-eth-signer/package.json")"
+  MES_PM_VER="$(pm_version_from_pkgjson "$ROOT_DIR/micro-eth-signer/package.json")"
+  ensure_pm "$MES_PM" "$MES_PM_VER"
+  install_deps "$ROOT_DIR/micro-eth-signer" "$MES_PM"
+  rebuild_native "$ROOT_DIR/micro-eth-signer" "$MES_PM"
+  build_pkg "$ROOT_DIR/micro-eth-signer" "$MES_PM"
+
+  HP_PM="$(pm_from_pkgjson "$ROOT_DIR/hardhat-polkadot/package.json")"
+  HP_PM_VER="$(pm_version_from_pkgjson "$ROOT_DIR/hardhat-polkadot/package.json")"
+  ensure_pm "$HP_PM" "$HP_PM_VER"
+  install_deps "$ROOT_DIR/hardhat-polkadot" "$HP_PM"
+  rebuild_native "$ROOT_DIR/hardhat-polkadot" "$HP_PM"
+  build_pkg "$ROOT_DIR/hardhat-polkadot" "$HP_PM"
+
+  SOL_PM="$(pm_from_pkgjson "$ROOT_DIR/solidity/package.json")"
+  SOL_PM_VER="$(pm_version_from_pkgjson "$ROOT_DIR/solidity/package.json")"
+  ensure_pm "$SOL_PM" "$SOL_PM_VER"
+  install_deps "$ROOT_DIR/solidity" "$SOL_PM"
+  rebuild_native "$ROOT_DIR/solidity" "$SOL_PM"
+  build_pkg "$ROOT_DIR/solidity" "$SOL_PM"
 fi
 
-if [ "$npm_lifecycle_event" == "postinstall" ]; then
-    echo "Setting up symlinks..."
-    mkdir -p node_modules/@onchain-id
-    
-    rm -rf node_modules/micro-eth-signer
-    rm -rf node_modules/@onchain-id/solidity
-    rm -rf node_modules/@parity/hardhat-polkadot
+if [ "${npm_lifecycle_event:-}" = "postinstall" ]; then
+  echo "Setting up symlinks..."
+  mkdir -p node_modules/@onchain-id node_modules/@parity
+  rm -rf node_modules/micro-eth-signer node_modules/@onchain-id/solidity node_modules/@parity/hardhat-polkadot*
+  [ -d "micro-eth-signer" ] && ln -sfn "$ROOT_DIR/micro-eth-signer" node_modules/micro-eth-signer && echo "micro-eth-signer symlink created"
+  [ -d "hardhat-polkadot" ] && link_parity_packages
+  [ -d "solidity" ] && ln -sfn "$ROOT_DIR/solidity" node_modules/@onchain-id/solidity && echo "solidity symlink created"
 
-    if [ -d "micro-eth-signer" ]; then
-        if ln -sfn "$ROOT_DIR/micro-eth-signer" node_modules/micro-eth-signer; then
-            echo "micro-eth-signer symlink created"
-        else
-            echo "Failed to create micro-eth-signer symlink"
-        fi
-    else
-        echo "micro-eth-signer directory not found, skipping symlink"
-    fi
-    
-    if [ -d "hardhat-polkadot" ]; then
-        echo "Setting up hardhat-polkadot workspace packages..."
-        mkdir -p node_modules/@parity
-        
-        for pkg_dir in hardhat-polkadot/packages/*/; do
-            if [ -f "$pkg_dir/package.json" ]; then
-                pkg_name=$(grep '"name"' "$pkg_dir/package.json" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | sed 's/@parity\///')
-                pkg_path="$pkg_dir"
-                
-                if [ -n "$pkg_name" ] && [[ "$pkg_name" =~ ^hardhat-polkadot ]]; then
-                    rm -rf "node_modules/@parity/$pkg_name"
-                    if ln -sfn "$ROOT_DIR/$pkg_path" "node_modules/@parity/$pkg_name"; then
-                        echo "@parity/$pkg_name symlink created"
-                    else
-                        echo "Failed to create @parity/$pkg_name symlink"
-                    fi
-                fi
-            fi
-        done
-    else
-        echo "hardhat-polkadot directory not found, skipping symlinks"
-    fi
+  echo "Applying fs-xattr stub if native binding is missing..."
+  node -e "try{require('fs-xattr');process.exit(0)}catch(e){process.exit(1)}" || true
+  if ! node -e "try{require('fs-xattr');process.exit(0)}catch(e){process.exit(1)}"; then
+    ensure_fs_xattr_stub "$ROOT_DIR"
+    [ -d "$ROOT_DIR/hardhat-polkadot" ] && ensure_fs_xattr_stub "$ROOT_DIR/hardhat-polkadot"
+    [ -d "$ROOT_DIR/solidity" ] && ensure_fs_xattr_stub "$ROOT_DIR/solidity"
+    echo "fs-xattr stub installed"
+  else
+    echo "fs-xattr native module present"
+  fi
 
-    if [ -d "solidity" ]; then
-        if ln -sfn "$ROOT_DIR/solidity" node_modules/@onchain-id/solidity; then
-            echo "solidity symlink created"
-        else
-            echo "Failed to create solidity symlink"
-        fi
-    else
-        echo "solidity directory not found, skipping symlink"
-    fi
-    
-    if [ -f "node_modules/.bin/patch-package" ]; then
-        npx patch-package || true
-    fi
-    
-    if command -v cargo >/dev/null 2>&1 && [ -d "polkadot-sdk" ]; then
-        cd "$ROOT_DIR/polkadot-sdk"
-        echo "Building Polkadot SDK..."
-        if cargo build -p pallet-revive-eth-rpc --bin eth-rpc --release; then
-            echo "eth-rpc build completed"
-        else
-            echo "eth-rpc build failed"
-        fi
-        if cargo build --bin substrate-node --release; then
-            echo "substrate-node build completed"
-        else
-            echo "substrate-node build failed"
-        fi
-        cd "$ROOT_DIR"
-    else
-        if [ ! -d "polkadot-sdk" ]; then
-            echo "polkadot-sdk directory not found, skipping Rust build"
-        else
-            echo "cargo not found, skipping Polkadot SDK build"
-        fi
-    fi
-    
-    echo "Setup complete!"
+  echo "Installing latest release binaries..."
+  install_nodes_binaries
+  echo "Setup complete!"
 fi
 
 exit 0

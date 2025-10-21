@@ -1,11 +1,11 @@
-import { Address, Hex, createWalletClient, http, checksumAddress, isAddressEqual } from 'viem';
+import { Address } from 'viem';
 
 export type DeployInput = {
   owner: Address;
   name: string;
   symbol: string;
   supply: bigint;
-  country?: number;
+  country: number;
   description?: string;
 };
 
@@ -23,7 +23,7 @@ export type DeployResponse = {
 };
 
 export type CustodyKey = { pubAddress: Address; privateKey: `0x${string}` };
-export type SetupIdentityInput = { owner: Address; country?: string };
+export type SetupIdentityInput = { owner: Address; country: string };
 export type SetupIdentityResponse = {
   status: boolean;
   message: string;

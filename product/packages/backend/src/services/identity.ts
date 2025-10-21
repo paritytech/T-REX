@@ -1,13 +1,14 @@
-import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
-import { loadArtifact } from '../chain/artifacts.ts';
-import { checksumAddress, createWalletClient, encodeAbiParameters, http, keccak256, stringToHex } from 'viem';
-import type { Address, Hex, Abi, Account, WalletClient, Transport, Chain } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
 import * as fs from 'fs/promises';
-import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import type { Abi, Account, Address, Chain, Hex, Transport, WalletClient } from 'viem';
+import { checksumAddress, createWalletClient, encodeAbiParameters, http, keccak256, stringToHex } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+import { loadArtifact } from '../chain/artifacts.ts';
+import { publicClient, walletClient as defaultWalletClient } from '../chain/client.ts';
 import { getCfg } from '../db/store.ts';
-import { CustodyKey, SetupIdentityResponse, SetupIdentityInput } from '../utils/types.ts';
+import { CustodyKey, SetupIdentityInput, SetupIdentityResponse } from '../utils/types.ts';
 
 const filename = fileURLToPath(import.meta.url);
 const directory = dirname(filename);

@@ -8,8 +8,10 @@
     "concurrently": "^9.0.1"
   },
   "scripts": {
-    "dev": "concurrently -k -n backend,frontend -c auto \"yarn workspace erc3643-poc dev\" \"yarn workspace token-poc-frontend dev\"",
-    "build": "concurrently -k -n backend,frontend -c auto \"yarn workspace erc3643-poc build\" \"yarn workspace token-poc-frontend build\"",
-    "start": "concurrently -k -n backend,frontend -c auto \"yarn workspace erc3643-poc start\" \"yarn workspace token-poc-frontend preview\""
+    "lint:check": "concurrently --success=all -n backend,frontend -c auto \"yarn workspace erc3643-poc lint:check\" \"yarn workspace token-poc-frontend lint:check\"",
+    "format:check": "concurrently --success=all -n backend,frontend -c auto \"yarn workspace erc3643-poc format:check\" \"yarn workspace token-poc-frontend format:check\"",
+    "dev": "concurrently -n backend,frontend -c auto \"yarn workspace erc3643-poc dev\" \"yarn workspace token-poc-frontend dev\"",
+    "build": "concurrently -n backend,frontend -c auto \"yarn workspace erc3643-poc build\" \"yarn workspace token-poc-frontend build\"",
+    "start": "concurrently -n backend,frontend -c auto \"yarn workspace erc3643-poc start\" \"yarn workspace token-poc-frontend preview\""
   }
 }

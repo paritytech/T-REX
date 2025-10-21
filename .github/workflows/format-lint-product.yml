@@ -1,0 +1,64 @@
+name: Format & Lint product
+
+on:
+  pull_request:
+    paths:
+      - 'product/**'
+  push:
+    branches:
+      - main
+     
+    paths:
+      - 'product/**'
+
+jobs:
+  format-check:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: product/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: 'product/yarn.lock'
+
+      - name: Enable Corepack for Yarn
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run format check
+        run: yarn format:check
+
+  lint-check:
+    name: Lint product folder
+    runs-on: ubuntu-latest
+    needs: format-check
+    defaults:
+      run:
+        working-directory: product/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          cache-dependency-path: 'product/yarn.lock'
+
+      - name: Enable Corepack for Yarn
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run lint check
+        run: yarn lint:check

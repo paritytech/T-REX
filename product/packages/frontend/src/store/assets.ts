@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { api, type Address, type GetUserResponse } from '../lib/api';
+
+import { type Address, api, type GetUserResponse } from '../lib/api';
 import { useSession } from './session';
 
 export type AssetRow = { id: string; name: string; symbol: string; token: Address; supply: string };
