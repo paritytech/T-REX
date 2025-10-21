@@ -34,8 +34,7 @@
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "docs": "hardhat dodoc",
     "prepare": "husky install",
-    "deploy:polkadot": "npx hardhat run scripts/TREXFactory.ts --network assetHub --no-compile",
-
+    "deploy:polkadot": "npx hardhat run scripts/TREXFactory.ts --network assetHub --no-compile"
   },
   "repository": {
     "type": "git",
