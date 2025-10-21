@@ -1,4 +1,4 @@
-name: Format & Lint product/
+name: Format & Lint product
 
 on:
   pull_request:
@@ -15,6 +15,9 @@ jobs:
   format-check:
     name: Check formatting
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: product/
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +26,7 @@ jobs:
         with:
           node-version: 18
           cache: 'yarn'
+          cache-dependency-path: 'product/yarn.lock'
 
       - name: Enable Corepack for Yarn
         run: corepack enable
@@ -32,12 +36,14 @@ jobs:
 
       - name: Run format check
         run: yarn format:check
-        working-directory: product/
 
   lint-check:
     name: Lint product folder
     runs-on: ubuntu-latest
     needs: format-check
+    defaults:
+      run:
+        working-directory: product/
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +52,7 @@ jobs:
         with:
           node-version: 18
           cache: 'yarn'
+          cache-dependency-path: 'product/yarn.lock'
 
       - name: Enable Corepack for Yarn
         run: corepack enable
@@ -55,4 +62,3 @@ jobs:
 
       - name: Run lint check
         run: yarn lint:check
-        working-directory: product/
