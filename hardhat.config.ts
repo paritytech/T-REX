@@ -65,17 +65,17 @@ const config: HardhatUserConfig = {
     polkadotHubTestnet: {
       polkavm: true,
       url: "https://testnet-passet-hub-eth-rpc.polkadot.io",
-      accounts: [process.env.PRIVATE_KEY || ''],
+      accounts: [process.env.PRIVATE_KEY || '0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133'],
     },
     westend: {
       polkavm: true,
       url: "https://westend-asset-hub-eth-rpc.polkadot.io",
-      accounts: [process.env.PRIVATE_KEY || ''],
+      accounts: [process.env.PRIVATE_KEY || '0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133'],
     },
     assetHub: {
       polkavm: true,
       url: "http://localhost:8545",
-      accounts: [process.env.PRIVATE_KEY || ''],
+      accounts: [process.env.PRIVATE_KEY || '0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133'],
     },
   },
 };
